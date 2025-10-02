@@ -6,7 +6,9 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.multipart.MultipartFile;
 
+import java.io.IOException;
 import java.net.http.HttpResponse;
 import java.util.List;
 
@@ -37,17 +39,27 @@ public class ProductController {
     }
 
 
-    @PostMapping("/products")
-    public Product addProduct(@RequestBody Product pr){
-        productServices.addProduct(pr);
-        return productServices.findById(pr.getId());
-    }
+    // Takes product without image
 
-//    @DeleteMapping("/products/${id}")
-//    public ResponseEntity<String> deleteProduct(@PathVariable int id){
-//        productServices.removeProduct(id);
-//        return new ResponseEntity<>( "Deleted", HttpStatus.OK);
+//    @PostMapping("/products")
+//    public Product addProduct(@RequestPart Product pr){
+//        productServices.addProduct(pr);
+//        return productServices.findById(pr.getId());
 //    }
 
+    // Takes product with image , using @Requestpart and MultipartFile
+
+    @PostMapping("/products")
+    public ResponseEntity<?> addProduct(@RequestPart Product product , @RequestPart MultipartFile imageFile){
+        Product productTemp = null;
+        try {
+            productTemp = productServices.addProduct(product , imageFile);
+            return new ResponseEntity<>(productTemp , HttpStatus.ACCEPTED);
+        } catch (IOException e) {
+            System.out.println(e.getMessage());
+            System.out.println(e.toString());
+            return new ResponseEntity<>(e.toString(), HttpStatus.INTERNAL_SERVER_ERROR);
+        }
+    }
 
 }
