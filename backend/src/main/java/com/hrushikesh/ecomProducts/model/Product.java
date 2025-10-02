@@ -29,5 +29,8 @@ public class Product {
     private boolean productAvailable;
     private int stockQuantity;
 
+    public Product(int id){ //To set id -1 in service if no product found from database
+        this.id = id;
+    }
 
 }

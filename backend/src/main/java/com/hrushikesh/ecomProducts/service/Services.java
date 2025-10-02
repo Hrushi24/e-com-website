@@ -24,7 +24,7 @@ public class Services {
 
 
     public Product findById(int id) {
-        return productRepo.findById(id).orElse(new Product());
+        return productRepo.findById(id).orElse(new Product(-1));
     }
 
 }

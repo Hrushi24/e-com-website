@@ -25,9 +25,17 @@ public class ProductController {
     }
 
     @GetMapping("/products/{id}")
-    public Product getProduct(@PathVariable int id){
-        return productServices.findById(id);
+    public ResponseEntity<Product> getProduct(@PathVariable int id){
+        Product product = productServices.findById(id);
+
+        if (product.getId() > 0){
+            return new ResponseEntity<>(productServices.findById(id) , HttpStatus.OK);
+        }
+        else {
+            return new ResponseEntity<>(HttpStatus.NOT_FOUND);
+        }
     }
+
 
     @PostMapping("/products")
     public Product addProduct(@RequestBody Product pr){
