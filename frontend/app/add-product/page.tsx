@@ -21,6 +21,8 @@ interface FormData {
   category: string
   productAvailable: boolean
   stockQuantity: string
+
+  imageFile: File | null
 }
 
 export default function AddProductPage() {
@@ -36,6 +38,7 @@ export default function AddProductPage() {
     category: "",
     productAvailable: false,
     stockQuantity: "",
+    imageFile: null,
   })
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
@@ -54,31 +57,59 @@ export default function AddProductPage() {
     }))
   }
 
+  //Hadle image file operation
+  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0] || null
+    setFormData((prev) => ({
+      ...prev,
+      imageFile: file,
+    }))
+
+  }
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
     setLoading(true)
     setError(null)
 
     try {
-      const productData = {
+      // const productData = {
+      //   name: formData.name,
+      //   description: formData.description,
+      //   brand: formData.brand,
+      //   price: Number.parseFloat(formData.price),
+      //   releaseDate: formData.releaseDate, // send as YYYY-MM-DD for simplicity
+      //   category: formData.category,
+      //   productAvailable: formData.productAvailable,
+      //   stockQuantity: Number.isNaN(Number.parseInt(formData.stockQuantity, 10))
+      //     ? 0
+      //     : Number.parseInt(formData.stockQuantity, 10),
+      // }
+
+      const formDataToSend = new FormData()
+
+      // creating object becuase in backend using @ResponsePart , where whole object is mapped to model(class).
+      const product = {
         name: formData.name,
         description: formData.description,
         brand: formData.brand,
-        price: Number.parseFloat(formData.price),
-        releaseDate: formData.releaseDate, // send as YYYY-MM-DD for simplicity
+        price: formData.price,
+        releaseDate: formData.releaseDate,
         category: formData.category,
         productAvailable: formData.productAvailable,
-        stockQuantity: Number.isNaN(Number.parseInt(formData.stockQuantity, 10))
-          ? 0
-          : Number.parseInt(formData.stockQuantity, 10),
+        stockQuantity: formData.stockQuantity,
+      };
+
+      // Sending object as json.
+      formDataToSend.append("product", new Blob([JSON.stringify(product)], { type: "application/json" }));
+
+      if (formData.imageFile) {
+        formDataToSend.append("imageFile", formData.imageFile)
       }
 
       const response = await fetch("http://localhost:8080/api/products", {
         method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify(productData),
+       body: formDataToSend,
       })
 
       if (!response.ok) {
@@ -163,6 +194,17 @@ export default function AddProductPage() {
                     rows={3}
                     required
                   />
+                </div>
+
+                {/* below code for image operations */}
+                <div className="space-y-2">
+                  <Label htmlFor="imageFile">Product Image</Label>
+                  <Input id="imageFile" name="imageFile" type="file" accept="image/*" onChange={handleFileChange} />
+                  <p className="text-xs text-muted-foreground">
+                    {formData.imageFile
+                      ? `Selected: ${formData.imageFile.name}`
+                      : "Upload an image for this product (optional)"}
+                  </p>
                 </div>
 
                 {/* brand + category */}
