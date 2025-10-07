@@ -54,7 +54,7 @@ public class ProductController {
         Product productTemp = null;
         try {
             productTemp = productServices.addProduct(product , imageFile);
-            return new ResponseEntity<>(productTemp , HttpStatus.ACCEPTED);
+            return new ResponseEntity<>(productTemp , HttpStatus.OK);
         } catch (IOException e) {
             System.out.println(e.getMessage());
             System.out.println(e.toString());
