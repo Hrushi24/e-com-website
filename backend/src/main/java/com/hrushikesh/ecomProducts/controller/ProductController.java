@@ -62,4 +62,18 @@ public class ProductController {
         }
     }
 
+    @GetMapping("/{productId}/image")
+    public ResponseEntity<byte[]> sendImage(@PathVariable int productId){
+        Product product = productServices.findById(productId);
+
+        if (product.getId() > 0 ){
+            return new ResponseEntity<>(product.getImageData() , HttpStatus.OK);
+        }
+        else {
+            return new ResponseEntity<>(HttpStatus.NOT_FOUND);
+        }
+
+    }
+
+
 }
