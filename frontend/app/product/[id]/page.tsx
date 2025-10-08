@@ -7,6 +7,7 @@ import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
 import { ArrowLeft, Edit, Trash2 } from "lucide-react"
+import { ProductImage } from "@/components/product-image"
 
 interface Product {
   id: number
@@ -128,6 +129,7 @@ export default function ProductDetailsPage() {
                     </div>
                   </CardHeader>
                   <CardContent>
+                  <ProductImage productId={product.id} height={256} containerClassName="rounded-md mb-4" />
                     <div className="space-y-4">
                       <div>
                         <h3 className="font-semibold text-lg mb-2">Product Information</h3>
