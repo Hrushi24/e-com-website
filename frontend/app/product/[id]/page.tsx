@@ -8,6 +8,9 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Badge } from "@/components/ui/badge"
 import { ArrowLeft, Edit, Trash2 } from "lucide-react"
 import { ProductImage } from "@/components/product-image"
+import { Input } from "@/components/ui/input"
+import { Label } from "@/components/ui/label"
+import { Textarea } from "@/components/ui/textarea"
 
 interface Product {
   id: number
@@ -23,6 +26,19 @@ export default function ProductDetailsPage() {
   const [product, setProduct] = useState<Product | null>(null)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
+
+  const [isEditing, setIsEditing] = useState(false)
+  const [updating, setUpdating] = useState(false)
+  const [updateError, setUpdateError] = useState<string | null>(null)
+  const [updateSuccess, setUpdateSuccess] = useState<string | null>(null)
+  const [form, setForm] = useState({
+    name: "",
+    description: "",
+    category: "",
+    price: "",
+  })
+  const [imageFile, setImageFile] = useState<File | null>(null)
+
 
   useEffect(() => {
     if (params.id) {
@@ -61,6 +77,80 @@ export default function ProductDetailsPage() {
       setError(err instanceof Error ? err.message : "Failed to delete product")
     }
   }
+
+
+  const startEditing = () => {
+    if (!product) return
+    setForm({
+      name: product.name ?? "",
+      description: product.description ?? "",
+      category: product.category ?? "",
+      price: product.price != null ? String(product.price) : "",
+    })
+    setImageFile(null)
+    setUpdateError(null)
+    setUpdateSuccess(null)
+    setIsEditing(true)
+  }
+
+  const submitUpdate = async (e: React.FormEvent) => {
+    e.preventDefault()
+    if (!product) return
+    try {
+      setUpdating(true)
+      setUpdateError(null)
+      setUpdateSuccess(null)
+
+      const payload = {
+        id: product.id,
+        name: form.name,
+        description: form.description,
+        category: form.category,
+        price: Number.parseFloat(form.price || "0"),
+      }
+
+      const response = await fetch(`http://localhost:8080/api/products/${product.id}`, {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(payload),
+      })
+      if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status}`)
+      }
+
+      // Optionally upload a new image file if selected
+      if (imageFile) {
+        const imgForm = new FormData()
+        // Backend can adjust the field name if needed (e.g., "file"); using "image" here.
+        imgForm.append("image", imageFile)
+        const imgResp = await fetch(`http://localhost:8080/api/${product.id}/image`, {
+          method: "PUT",
+          body: imgForm,
+        })
+        if (!imgResp.ok) {
+          throw new Error(`Image upload failed with status: ${imgResp.status}`)
+        }
+      }
+
+      setUpdateSuccess("Product updated successfully.")
+      await fetchProduct(String(product.id))
+      setImageFile(null)
+      setIsEditing(false)
+    } catch (err) {
+      setUpdateError(err instanceof Error ? err.message : "Failed to update product")
+    } finally {
+      setUpdating(false)
+    }
+  }
+
+  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
+    const { name, value } = e.target
+    setForm((prevForm) => ({
+      ...prevForm,
+      [name]: value,
+    }))
+  }
+
 
   return (
     <div className="min-h-screen bg-background">
@@ -120,11 +210,38 @@ export default function ProductDetailsPage() {
                   <CardHeader>
                     <div className="flex items-start justify-between">
                       <div>
-                        <CardTitle className="text-2xl">{product.name}</CardTitle>
-                        <CardDescription className="text-base mt-2">{product.description}</CardDescription>
+                      {isEditing ? (
+                          <Input
+                            name="name"
+                            value={form.name}
+                            onChange={handleInputChange}
+                            className="text-2xl font-bold"
+                          />
+                        ) : (
+                          <CardTitle className="text-2xl">{product.name}</CardTitle>
+                        )}
+                        {isEditing ? (
+                          <Textarea
+                            name="description"
+                            value={form.description}
+                            onChange={handleInputChange}
+                            className="text-base mt-2"
+                          />
+                        ) : (
+                          <CardDescription className="text-base mt-2">{product.description}</CardDescription>
+                        )}
                       </div>
                       <Badge variant="secondary" className="text-sm">
-                        {product.category}
+                      {isEditing ? (
+                          <Input
+                            name="category"
+                            value={form.category}
+                            onChange={handleInputChange}
+                            className="text-sm"
+                          />
+                        ) : (
+                          product.category
+                        )}
                       </Badge>
                     </div>
                   </CardHeader>
@@ -140,14 +257,32 @@ export default function ProductDetailsPage() {
                           </div>
                           <div>
                             <p className="text-sm text-muted-foreground">Category</p>
-                            <p className="font-medium">{product.category}</p>
+                            {isEditing ? (
+                              <Input
+                                name="category"
+                                value={form.category}
+                                onChange={handleInputChange}
+                                className="font-medium"
+                              />
+                            ) : (
+                              <p className="font-medium">{product.category}</p>
+                            )}
                           </div>
                         </div>
                       </div>
 
                       <div>
                         <p className="text-sm text-muted-foreground">Description</p>
-                        <p className="font-medium">{product.description}</p>
+                        {isEditing ? (
+                          <Textarea
+                            name="description"
+                            value={form.description}
+                            onChange={handleInputChange}
+                            className="font-medium"
+                          />
+                        ) : (
+                          <p className="font-medium">{product.description}</p>
+                        )}
                       </div>
                     </div>
                   </CardContent>
@@ -161,8 +296,16 @@ export default function ProductDetailsPage() {
                   </CardHeader>
                   <CardContent>
                     <div className="text-center">
-                      <p className="text-3xl font-bold text-primary">${product.price.toFixed(2)}</p>
-                      <p className="text-sm text-muted-foreground mt-1">Current price</p>
+                    {isEditing ? (
+                        <Input
+                          name="price"
+                          value={form.price}
+                          onChange={handleInputChange}
+                          className="text-3xl font-bold text-primary"
+                        />
+                      ) : (
+                        <p className="text-3xl font-bold text-primary">${product.price.toFixed(2)}</p>
+                      )}
                     </div>
                   </CardContent>
                 </Card>
@@ -173,6 +316,10 @@ export default function ProductDetailsPage() {
                     <CardDescription>Manage this product</CardDescription>
                   </CardHeader>
                   <CardContent className="space-y-3">
+                    <Button variant="default" className="w-full" onClick={startEditing}>
+                      <Edit className="w-4 h-4 mr-2" />
+                      Update Product
+                    </Button>
                     <Button variant="destructive" className="w-full" onClick={deleteProduct}>
                       <Trash2 className="w-4 h-4 mr-2" />
                       Delete Product
@@ -186,6 +333,89 @@ export default function ProductDetailsPage() {
                     </Button>
                   </CardContent>
                 </Card>
+
+                {isEditing && (
+                  <Card>
+                    <CardHeader>
+                      <CardTitle>Update Product</CardTitle>
+                      <CardDescription>Edit fields and save changes</CardDescription>
+                    </CardHeader>
+                    <CardContent>
+                      {updateError && (
+                        <div className="bg-destructive/10 border border-destructive/20 rounded-md p-2 mb-4 text-sm text-destructive">
+                          {updateError}
+                        </div>
+                      )}
+                      {updateSuccess && (
+                        <div className="bg-green-500/10 border border-green-500/20 rounded-md p-2 mb-4 text-sm text-green-600">
+                          {updateSuccess}
+                        </div>
+                      )}
+                      <form onSubmit={submitUpdate} className="space-y-4">
+                        <div className="space-y-2">
+                          <Label htmlFor="name">Name</Label>
+                          <Input
+                            id="name"
+                            value={form.name}
+                            onChange={(e) => setForm((f) => ({ ...f, name: e.target.value }))}
+                            required
+                          />
+                        </div>
+                        <div className="space-y-2">
+                          <Label htmlFor="description">Description</Label>
+                          <Textarea
+                            id="description"
+                            value={form.description}
+                            onChange={(e) => setForm((f) => ({ ...f, description: e.target.value }))}
+                            rows={4}
+                          />
+                        </div>
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                          <div className="space-y-2">
+                            <Label htmlFor="category">Category</Label>
+                            <Input
+                              id="category"
+                              value={form.category}
+                              onChange={(e) => setForm((f) => ({ ...f, category: e.target.value }))}
+                            />
+                          </div>
+                          <div className="space-y-2">
+                            <Label htmlFor="price">Price</Label>
+                            <Input
+                              id="price"
+                              type="number"
+                              step="0.01"
+                              value={form.price}
+                              onChange={(e) => setForm((f) => ({ ...f, price: e.target.value }))}
+                            />
+                          </div>
+                        </div>
+
+                        <div className="space-y-2">
+                          <Label htmlFor="newImage">New Image (optional)</Label>
+                          <Input
+                            id="newImage"
+                            type="file"
+                            accept="image/*"
+                            onChange={(e) => setImageFile(e.target.files?.[0] ?? null)}
+                          />
+                          {imageFile ? (
+                            <p className="text-xs text-muted-foreground">Selected: {imageFile.name}</p>
+                          ) : null}
+                        </div>
+
+                        <div className="flex items-center gap-2 pt-2">
+                          <Button type="submit" disabled={updating}>
+                            {updating ? "Saving..." : "Save Changes"}
+                          </Button>
+                          <Button type="button" variant="outline" onClick={() => setIsEditing(false)}>
+                            Cancel
+                          </Button>
+                        </div>
+                      </form>
+                    </CardContent>
+                  </Card>
+                )}
 
                 <Card>
                   <CardHeader>
