@@ -6,6 +6,7 @@ import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
 import { Plus, Package, Eye } from "lucide-react"
+import { ProductImage } from "@/components/product-image"
 
 interface Product {
   id: number
@@ -13,6 +14,7 @@ interface Product {
   description: string
   price: number
   category: string
+  imageUrl?: string
 }
 
 export default function HomePage() {
@@ -118,6 +120,9 @@ export default function HomePage() {
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
           {products.map((product) => (
             <Card key={product.id} className="hover:shadow-lg transition-shadow">
+              <ProductImage productId={product.id} height={192} containerClassName="rounded-t-lg border-0" />
+
+
               <CardHeader>
                 <div className="flex items-start justify-between">
                   <div>
