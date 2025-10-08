@@ -30,7 +30,7 @@ public class Services {
     }
 
     // save product with image
-    public Product addProduct(Product product, MultipartFile image) throws IOException {
+    public Product addOrUpdateProduct(Product product, MultipartFile image) throws IOException {
 
         product.setImageName(image.getOriginalFilename());
         product.setImageType(image.getContentType());

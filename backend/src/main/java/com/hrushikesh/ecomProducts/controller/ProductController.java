@@ -53,7 +53,7 @@ public class ProductController {
     public ResponseEntity<?> addProduct(@RequestPart Product product , @RequestPart MultipartFile imageFile){
         Product productTemp = null;
         try {
-            productTemp = productServices.addProduct(product , imageFile);
+            productTemp = productServices.addOrUpdateProduct(product , imageFile);
             return new ResponseEntity<>(productTemp , HttpStatus.OK);
         } catch (IOException e) {
             System.out.println(e.getMessage());
@@ -71,6 +71,34 @@ public class ProductController {
         }
         else {
             return new ResponseEntity<>(HttpStatus.NOT_FOUND);
+        }
+
+    }
+
+    // update product information only
+    @PutMapping("products/{id}")
+    public ResponseEntity<?> updateProduct(@PathVariable int id, @RequestBody Product product) {
+        Product updateProduct = productServices.findById(id);
+        updateProduct.setName(product.getName());
+        updateProduct.setCategory(product.getCategory());
+        updateProduct.setDescription(product.getDescription());
+        updateProduct.setPrice(product.getPrice());
+
+
+        productServices.addProduct(updateProduct);
+
+        return new ResponseEntity<>(HttpStatus.OK);
+    }
+
+    //Only accepting image when it is added to update form.
+    @PutMapping("/{id}/image")
+    public ResponseEntity<?> updateImage(@PathVariable int id , @RequestPart("image") MultipartFile imageFile){
+        Product updateImage = null;
+        try {
+            updateImage = productServices.addOrUpdateProduct(productServices.findById(id) , imageFile);
+            return new ResponseEntity<>(HttpStatus.OK);
+        } catch (IOException e) {
+            return new ResponseEntity<>(HttpStatus.BAD_GATEWAY);
         }
 
     }
