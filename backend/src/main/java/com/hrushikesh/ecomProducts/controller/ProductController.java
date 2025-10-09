@@ -100,7 +100,18 @@ public class ProductController {
         } catch (IOException e) {
             return new ResponseEntity<>(HttpStatus.BAD_GATEWAY);
         }
+    }
 
+    @DeleteMapping("/products/{id}")
+    public ResponseEntity<?> deleteProduct(@PathVariable int id){
+        Product product = productServices.findById(id);
+
+        if (product != null){
+            productServices.deleteProductById(id);
+            return new ResponseEntity<>("Deleted" , HttpStatus.OK);
+        }else {
+            return new ResponseEntity<>(HttpStatus.NOT_FOUND);
+        }
     }
 
 
