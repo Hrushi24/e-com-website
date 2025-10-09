@@ -7,6 +7,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Badge } from "@/components/ui/badge"
 import { Plus, Package, Eye } from "lucide-react"
 import { ProductImage } from "@/components/product-image"
+import { Input } from "@/components/ui/input"
 
 interface Product {
   id: number
@@ -21,15 +22,22 @@ export default function HomePage() {
   const [products, setProducts] = useState<Product[]>([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
+  const [keyword, setKeyword] = useState("")
 
   useEffect(() => {
     fetchProducts()
   }, [])
 
-  const fetchProducts = async () => {
+  const fetchProducts = async (q?: string) => {
     try {
       setLoading(true)
-      const response = await fetch("http://localhost:8080/api/products")
+      const query = (q ?? "").trim()
+      const url = query
+        ? `http://localhost:8080/api/search?keyword=${encodeURIComponent(query)}`
+        : "http://localhost:8080/api/products"
+      const response = await fetch(url)
+
+
       if (!response.ok) {
         throw new Error(`HTTP error! status: ${response.status}`)
       }
@@ -83,9 +91,32 @@ export default function HomePage() {
             <h2 className="text-3xl font-bold">Products</h2>
             <p className="text-muted-foreground">Manage your product inventory</p>
           </div>
-          <Button onClick={fetchProducts} variant="outline">
-            Refresh
-          </Button>
+          <div className="flex items-center gap-2">
+            <form
+              onSubmit={(e) => {
+                e.preventDefault()
+                fetchProducts(keyword)
+              }}
+              className="flex items-center gap-2"
+            >
+              <Input
+                value={keyword}
+                onChange={(e) => setKeyword(e.target.value)}
+                placeholder="Search products..."
+                className="w-56"
+              />
+              <Button type="submit">Search</Button>
+            </form>
+            <Button
+              onClick={() => {
+                setKeyword("")
+                fetchProducts()
+              }}
+              variant="outline"
+            >
+              Refresh
+            </Button>
+          </div>
         </div>
 
         {loading && (
